@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import Order from "../database/models/order.model";
 import Event from "../database/models/event.model";
 
-export const createUser = async (user: CreateUserParams) => {
+export async function createUser(user: CreateUserParams) {
   try {
     await connectToDb();
     const newUser = await User.create(user);
@@ -16,7 +16,7 @@ export const createUser = async (user: CreateUserParams) => {
   } catch (error) {
     handleError(error);
   }
-};
+}
 
 export async function getUserById(userId: string) {
   try {
