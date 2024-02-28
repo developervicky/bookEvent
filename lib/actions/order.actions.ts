@@ -36,6 +36,12 @@ export async function checkoutOrder(order: CheckoutOrderParams) {
         eventId: order.eventId,
         buyerId: order.buyerId,
       },
+      custom_text: {
+        after_submit: {
+          message:
+            "**For Testing:** **Card No** - 4000003560000008, **Date** - Any future Date, **CVV** - Any 3 digit",
+        },
+      },
       mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/profile`,
       cancel_url: `${process.env.NEXT_PUBLIC_SERVER_URL}/`,
