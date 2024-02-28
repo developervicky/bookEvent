@@ -1,6 +1,11 @@
 "use server";
 
-import { CheckoutOrderParams, GetOrdersByEventParams, GetOrdersByUserParams } from "@/types";
+import {
+  CheckoutOrderParams,
+  CreateOrderParams,
+  GetOrdersByEventParams,
+  GetOrdersByUserParams,
+} from "@/types";
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
 import { handleError } from "../utils";
@@ -41,7 +46,7 @@ export async function checkoutOrder(order: CheckoutOrderParams) {
   }
 }
 
-export const createOrder = async (order: CheckoutOrderParams) => {
+export const createOrder = async (order: CreateOrderParams) => {
   try {
     await connectToDb();
 
@@ -56,88 +61,103 @@ export const createOrder = async (order: CheckoutOrderParams) => {
   }
 };
 
-export async function getOrdersByEvent({ searchString, eventId }: GetOrdersByEventParams) {
+export async function getOrdersByEvent({
+  searchString,
+  eventId,
+}: GetOrdersByEventParams) {
   try {
-    await connectToDb()
+    await connectToDb();
 
-    if (!eventId) throw new Error('Event ID is required')
-    const eventObjectId = new ObjectId(eventId)
+    if (!eventId) throw new Error("Event ID is required");
+    const eventObjectId = new ObjectId(eventId);
 
     const orders = await Order.aggregate([
       {
         $lookup: {
-          from: 'users',
-          localField: 'buyer',
-          foreignField: '_id',
-          as: 'buyer',
+          from: "users",
+          localField: "buyer",
+          foreignField: "_id",
+          as: "buyer",
         },
       },
       {
-        $unwind: '$buyer',
+        $unwind: "$buyer",
       },
       {
         $lookup: {
-          from: 'events',
-          localField: 'event',
-          foreignField: '_id',
-          as: 'event',
+          from: "events",
+          localField: "event",
+          foreignField: "_id",
+          as: "event",
         },
       },
       {
-        $unwind: '$event',
+        $unwind: "$event",
       },
       {
         $project: {
           _id: 1,
           totalAmount: 1,
           createdAt: 1,
-          eventTitle: '$event.title',
-          eventId: '$event._id',
+          eventTitle: "$event.title",
+          eventId: "$event._id",
           buyer: {
-            $concat: ['$buyer.firstName', ' ', '$buyer.lastName'],
+            $concat: ["$buyer.firstName", " ", "$buyer.lastName"],
           },
         },
       },
       {
         $match: {
-          $and: [{ eventId: eventObjectId }, { buyer: { $regex: RegExp(searchString, 'i') } }],
+          $and: [
+            { eventId: eventObjectId },
+            { buyer: { $regex: RegExp(searchString, "i") } },
+          ],
         },
       },
-    ])
+    ]);
 
-    return JSON.parse(JSON.stringify(orders))
+    return JSON.parse(JSON.stringify(orders));
   } catch (error) {
-    handleError(error)
+    handleError(error);
   }
 }
 
 // GET ORDERS BY USER
-export async function getOrdersByUser({ userId, limit = 3, page }: GetOrdersByUserParams) {
+export async function getOrdersByUser({
+  userId,
+  limit = 3,
+  page,
+}: GetOrdersByUserParams) {
   try {
-    await connectToDb()
+    await connectToDb();
 
-    const skipAmount = (Number(page) - 1) * limit
-    const conditions = { buyer: userId }
+    const skipAmount = (Number(page) - 1) * limit;
+    const conditions = { buyer: userId };
 
-    const orders = await Order.distinct('event._id')
+    const orders = await Order.distinct("event._id")
       .find(conditions)
-      .sort({ createdAt: 'desc' })
+      .sort({ createdAt: "desc" })
       .skip(skipAmount)
       .limit(limit)
       .populate({
-        path: 'event',
+        path: "event",
         model: Event,
         populate: {
-          path: 'organizer',
+          path: "organizer",
           model: User,
-          select: '_id firstName lastName',
+          select: "_id firstName lastName",
         },
-      })
+      });
 
-    const ordersCount = await Order.distinct('event._id').countDocuments(conditions)
+    const ordersCount = await Order.distinct("event._id").countDocuments(
+      conditions
+    );
 
-    return { data: JSON.parse(JSON.stringify(orders)), totalPages: Math.ceil(ordersCount / limit) }
+    return {
+      data: JSON.parse(JSON.stringify(orders)),
+      totalPages: Math.ceil(ordersCount / limit),
+    };
   } catch (error) {
-    handleError(error)
+    handleError(error);
   }
 }
