@@ -9,12 +9,7 @@ const Loading = () => {
         <h3 className="h3-bold text-center">
           Your Page is loading, spare some seconds!
         </h3>
-        <InfinitySpin
-          visible={true}
-          width="200"
-          color="#6D4C3D"
-          ariaLabel="infinity-spin-loading"
-        />
+        <InfinitySpin width="200" color="#6D4C3D" />
       </div>
     </section>
   );
