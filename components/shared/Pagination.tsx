@@ -25,7 +25,7 @@ const Pagination = ({ urlParamName, totalPages, page }: PaginationProps) => {
 
     router.push(newUrl, { scroll: false });
   };
-  console.log(page);
+  // console.log(page);
 
   return (
     <div className="flex gap-2">
