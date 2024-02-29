@@ -111,10 +111,22 @@ export const getAllEvent = async ({
 }: GetAllEventsParams) => {
   try {
     await connectToDb();
-    const conditions = {};
+    const titleCondition = query
+      ? { title: { $regex: query, $options: "i" } }
+      : {};
+    const categoryCondition = category
+      ? await Category.findOne({ name: { $regex: category, $options: "i" } })
+      : null;
+    const conditions = {
+      $and: [
+        titleCondition,
+        categoryCondition ? { category: categoryCondition._id } : {},
+      ],
+    };
+    const skipAmount = (Number(page) - 1) * limit;
     const eventQuery = Event.find(conditions)
       .sort({ createdAt: "desc" })
-      .skip(0)
+      .skip(skipAmount)
       .limit(limit);
 
     const events = await populateEvent(eventQuery);
@@ -171,7 +183,7 @@ export async function getEventsByUser({
     const conditions = { organizer: userId };
     const skipAmount = (page - 1) * limit;
 
-    const eventQuery =  Event.find(conditions)
+    const eventQuery = Event.find(conditions)
       .sort({
         createdAt: "desc",
       })
@@ -185,7 +197,6 @@ export async function getEventsByUser({
       data: JSON.parse(JSON.stringify(events)),
       totalPages: Math.ceil(eventCount / limit),
     };
-
   } catch (error) {
     handleError(error);
   }
